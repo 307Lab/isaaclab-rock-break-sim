@@ -73,15 +73,15 @@ usdTools.apply_impact(
     rock,
     impact_idx,
     impact_dir,
-    I0=250.0,     # 冲击力
-    gamma=0.8,     # 传播衰减
-    lamb=0.8,      # 距离衰减
-    k=1.0,          # 材料系数
-    alpha=1.0,     # 非线性结构强度
-    beta=0.5,       # 损伤后损伤强度
-    min_I=1e-3,     # 传播停止阈值
-    k_c = 1.0,   # 压缩强度
-    k_t = 0.2   # 抗拉强度只有20%
+    I0=250.0,
+    gamma=0.8,
+    lamb=0.8,
+    k=1.0,
+    alpha=1.0,
+    beta=0.5,
+    min_I=1e-3,
+    k_c = 1.0,
+    k_t = 0.2
 )
 
 #### 参数列表
@@ -189,6 +189,24 @@ usdTools.load_rock_from_file(
 
 ---
 
+### 重置石头
+
+usdTools.reset_rock(
+    rocks : list, 
+    rock_name : str
+):
+
+#### 参数列表
+
+- rocks : list          现有石头的列表
+- rock_name : str       需要重置的石头的名称
+
+#### 返回值
+
+- usdTools.Rock : list  碎裂后的石头列表
+
+---
+
 ## 使用方法
 
 完整方法参见 start_sim.py
@@ -206,6 +224,9 @@ def design_scene():
 
     # 生成石头
     rock=usdTools.generate_prebroken_rock(num_points=50, scale=0.5, num_cells=10, root_path="/World/Objects/base_rock_0", base_translation=(0, 0, 0), seed=None)
+    # 从预先生成的石头中加载
+    # rock=usdTools.load_rock_from_file(file_name="rock_data.pkl",rock_name="base_rock_0",root_path="/World/Objects/base_rock_0",base_translation=(0, 0, 0))
+
     return rock
 
 # 初始化仿真环境
@@ -244,4 +265,11 @@ while simulation_app.is_running():
 
 ```
     rock=usdTools.apply_impact(rock, impact_idx=closest_id, impact_dir=[0, -1, 0])
+```
+
+
+### 重置破碎后的石头
+
+```
+    rock=usdTools.reset_rock(rock,"base_rock_0")
 ```

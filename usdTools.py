@@ -9,8 +9,17 @@ import prebreakv2
 import torch
 import pickle
 
+class Rock_state:
+    def __init__(self, adj, centers, ids, masses, connections=None, base_translation=(0, 0, 0)):
+        self.adj = adj
+        self.centers = centers
+        self.ids = ids
+        self.masses = masses
+        self.connections = connections
+        self.base_translation = base_translation
+
 class Rock:
-    def __init__(self, rock_objects,rockname, root, adj, centers, ids, masses,connections=None,base_translation=(0, 0, 0)):
+    def __init__(self, rock_objects,rockname, root, adj, centers, ids, masses,connections=None,base_translation=(0, 0, 0),rock_initstate=None):
         self.rock_objects = rock_objects
         self.rockname = rockname
         self.root = root
@@ -21,6 +30,7 @@ class Rock:
         self.masses = masses
         self.connections = connections
         self.base_translation = base_translation
+        self.rock_initstate = rock_initstate
         
 def load_meshes_to_isaaclab(
     meshes,
@@ -170,11 +180,17 @@ def generate_prebroken_rock(
 
                 create_attachment_between_prims(rock_name,i,j,prim_i, prim_j)
                 connections.append((i, j))
+                
+    Rock_initstate = Rock_state(adj=adj,centers=centers,ids=ids,masses=masses,connections=connections,base_translation=base_translation)
     
-    return Rock(rock_objects=rock_objects,rockname=rock_name, root=root, adj=adj, centers=centers, ids=ids, masses=masses,connections=connections,base_translation=base_translation)
+    return Rock(rock_objects=rock_objects,rockname=rock_name, root=root, adj=adj, centers=centers, ids=ids, masses=masses,connections=connections,base_translation=base_translation,rock_initstate=Rock_initstate)
 
 
-    
+"""
+从文件中加载已生成的石头
+Returns:
+    Rock: 包含石头信息和Isaac Lab对象的Rock实例
+"""   
 def load_rock_from_file(
     file_name=None,
     rock_name="base_rock_0",
@@ -207,7 +223,9 @@ def load_rock_from_file(
                 create_attachment_between_prims(rock_name,i,j,prim_i, prim_j)
                 connections.append((i, j))
     
-    return Rock(rock_objects=rock_objects,rockname=rock_name, root=root, adj=adj, centers=centers, ids=ids, masses=masses,connections=connections,base_translation=base_translation)
+    Rock_initstate = Rock_state(adj=adj,centers=centers,ids=ids,masses=masses,connections=connections,base_translation=base_translation)
+    
+    return Rock(rock_objects=rock_objects,rockname=rock_name, root=root, adj=adj, centers=centers, ids=ids, masses=masses,connections=connections,base_translation=base_translation,rock_initstate=Rock_initstate)
     
 
 
@@ -261,7 +279,7 @@ def apply_impact(
                 if groups_subgraphs[idx][i][j] > 0:
                     connections.append((groups_ids[idx][i], groups_ids[idx][j]))
 
-        rocks.append(Rock(rock_objects=groups_Object[idx],rockname=rock.rockname, root=rock.root, adj=groups_subgraphs[idx], centers=groups_centers[idx], ids=groups_ids[idx], masses=groups_masses[idx],connections=connections,base_translation=rock.base_translation))
+        rocks.append(Rock(rock_objects=groups_Object[idx],rockname=rock.rockname, root=rock.root, adj=groups_subgraphs[idx], centers=groups_centers[idx], ids=groups_ids[idx], masses=groups_masses[idx],connections=connections,base_translation=rock.base_translation,rock_initstate=rock.rock_initstate))
     
     return rocks
 
@@ -357,3 +375,54 @@ def update_rocks_state(rocks, dt=0.02):
     else:
         # 如果rocks是一个单一的rock对象，直接更新它的状态
         update_rock_state(rocks, dt)
+        
+        
+"""
+重置石头状态
+"""
+
+def reset_rock(rocks : list, rock_name : str):
+    if not isinstance(rocks, list):
+        print("[WARNING]: No rock can be reset")
+        return rocks
+    stage = omni.usd.get_context().get_stage()
+    for rock in rocks[:]:
+        if rock.rockname == rock_name:
+            initstate=rock.rock_initstate
+            break
+            
+    N=len(initstate.ids)
+    for i in range(N):
+        for j in range(i , N):  # 只遍历上三角，避免重复
+            if initstate.adj[i][j] > 0:
+                prim_i = f"/World/Objects/{rock_name}/rock_{i}"
+                prim_j = f"/World/Objects/{rock_name}/rock_{j}"
+                break_attachment_between_prims(rock_name,i,j)
+    
+    rock_objects=[]
+    for rock in rocks[:]:    
+        if rock.rockname == rock_name:
+            initstate=rock.rock_initstate
+            root=rock.root
+            for rock_object in rock.rock_objects:
+                # rock_object.reset()
+                rock_object.write_root_state_to_sim(rock_object.data.default_root_state)
+                rock_objects.append(rock_object)
+            rocks.remove(rock) 
+
+    rock_org= Rock(rock_objects=rock_objects,rockname=rock_name,root=root,adj=initstate.adj,centers=initstate.centers, ids=initstate.ids, masses=initstate.masses, connections= initstate.connections, base_translation=initstate.base_translation, rock_initstate=initstate)
+    rocks.append(rock_org)
+    for idx in range(len(rock_org.ids)):
+        prim = stage.GetPrimAtPath(f"{rock_org.root_path}/rock_{idx}")
+        collision_api = UsdPhysics.CollisionAPI.Apply(prim)
+        collision_api.GetCollisionEnabledAttr().Set(True)
+    for i in range(N):
+        for j in range(i , N):  # 只遍历上三角，避免重复
+            if initstate.adj[i][j] > 0:
+                prim_i = f"/World/Objects/{rock_name}/rock_{i}"
+                prim_j = f"/World/Objects/{rock_name}/rock_{j}"
+                create_attachment_between_prims(rock_name,i,j,prim_i, prim_j)
+    
+    return rocks
+            
+    
