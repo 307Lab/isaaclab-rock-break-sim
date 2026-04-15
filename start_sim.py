@@ -78,7 +78,8 @@ def design_scene():
     sim_utils.create_prim("/World/Objects", "Xform")
 
     # 生成石头
-    rock=usdTools.generate_prebroken_rock(num_points=50, scale=0.5, num_cells=10, root_path="/World/Objects/base_rock_0", base_translation=(0, 0, 0), seed=None)
+    # rock=usdTools.generate_prebroken_rock(num_points=50, scale=0.5, num_cells=10, root_path="/World/Objects/base_rock_0", base_translation=(0, 0, 0), seed=None)
+    rock=usdTools.load_rock_from_file(file_name="rock_data.pkl",rock_name="base_rock_0",root_path="/World/Objects/base_rock_0",base_translation=(0, 0, 0))
     return rock
 
 

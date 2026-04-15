@@ -7,6 +7,7 @@ from isaaclab.assets import RigidObject, RigidObjectCfg
 from pxr import UsdGeom, Usd
 import prebreakv2
 import torch
+import pickle
 
 class Rock:
     def __init__(self, rock_objects,rockname, root, adj, centers, ids, masses,connections=None,base_translation=(0, 0, 0)):
@@ -172,6 +173,42 @@ def generate_prebroken_rock(
     
     return Rock(rock_objects=rock_objects,rockname=rock_name, root=root, adj=adj, centers=centers, ids=ids, masses=masses,connections=connections,base_translation=base_translation)
 
+
+    
+def load_rock_from_file(
+    file_name=None,
+    rock_name="base_rock_0",
+    root_path="/World/Objects/base_rock_0",
+    base_translation=(0, 0, 0)
+):
+    if file_name is None:
+        return None
+    
+    with open(file_name, "rb") as f:
+        data = pickle.load(f)
+
+    fragments = data["fragments"]
+    masses = data["masses"]
+    adj = data["adj"]
+    centers = data["centers"]
+    ids = data["ids"]
+    # 加载到 IsaacLab
+    root, rock_objects = load_meshes_to_isaaclab(fragments,masses,root_path=root_path,base_translation=base_translation)
+    N = adj.shape[0]
+    
+    # 创建连接关系
+    connections=[]
+    for i in range(N):
+        for j in range(i , N):  # 只遍历上三角，避免重复
+            if adj[i][j] > 0:
+                prim_i = f"/World/Objects/{rock_name}/rock_{i}"
+                prim_j = f"/World/Objects/{rock_name}/rock_{j}"
+
+                create_attachment_between_prims(rock_name,i,j,prim_i, prim_j)
+                connections.append((i, j))
+    
+    return Rock(rock_objects=rock_objects,rockname=rock_name, root=root, adj=adj, centers=centers, ids=ids, masses=masses,connections=connections,base_translation=base_translation)
+    
 
 
 """

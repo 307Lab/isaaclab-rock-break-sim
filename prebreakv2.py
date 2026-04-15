@@ -7,6 +7,7 @@ from pxr import Gf, Usd, UsdGeom, UsdPhysics
 from scipy.spatial import Voronoi, cKDTree
 import impact_model
 import matplotlib.colors as mcolors
+import pickle
 
 def generate_random_rock(num_points=30, scale=1.0, seed=None):
     """
@@ -434,6 +435,44 @@ def main():
 
     # 4. 可视化
     visualize(rock, fragments,adj,impact,idx)
+    
+"""
+生成一个预破碎石头，并保存到文件中
+Returns:
+    Rock: 包含石头信息和Isaac Lab对象的Rock实例
+"""
+def generate_prebroken_rock_and_save(
+    num_points=40,
+    scale=0.5,
+    num_cells=25,
+    file_name="rock_data.pkl",
+    seed=None
+):
+    
+    # 原始石头
+    rock = generate_random_rock(num_points=num_points,scale=scale,seed=seed)
+
+    # Voronoi 破碎
+    fragments = voronoi_fracture(rock,num_cells=num_cells,seed=seed)
+
+    # 质量
+    masses = compute_mass(fragments)
+
+    # 连接关系
+    adj, centers, ids = build_connectivity(fragments)
+
+    # 保存
+    data = {
+        "fragments": fragments,
+        "masses": masses,
+        "adj": adj,
+        "centers": centers,
+        "ids": ids,
+    }
+    with open(file_name, "wb") as f:
+        pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
+        
+    print(f"[INFO]: rock saved to {file_name}")
 
 
 if __name__ == "__main__":
