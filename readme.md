@@ -1,5 +1,7 @@
 # 石头破碎模拟
 
+---
+
 ## 函数用法
 
 ### 石头定义
@@ -31,6 +33,8 @@ usdTools.Rock(
 - connections ： (2,N)          记录连接在一起的边
 - base_translation : tuple(3)   初始偏移
 
+---
+
 ### 生成石头
 
 在场景中生成一个预破碎后的石块
@@ -59,7 +63,9 @@ usdTools.generate_prebroken_rock(
 
 - usdTools.Rock 单个石头对象
 
-# 应用冲击模型
+---
+
+#### 应用冲击模型
 
 应用一个冲击力到指定石块上的对应点，首先会检测石头是否还可以继续破碎，如果不能则返回石头自身，破碎完成后返回碎裂开的石头列表
 
@@ -97,6 +103,8 @@ usdTools.apply_impact(
 
 - usdTools.Rock : list 碎裂后的石头列表
 
+---
+
 ### 获取最近的石头
 
 从石块中获取最近的一个碎块
@@ -117,6 +125,7 @@ get_closest_rock_and_id(
 - closest_rock ：usdTools.Rock  最近的石块对象
 - min_dist ： tensor            最近距离
 
+---
 
 ### 状态更新
 
@@ -131,6 +140,8 @@ update_rocks_state(
 
 - rocks ： usdTools.Rock        单个石头或所有石头的列表
 - dt=0.02 : float               时间步长，需要等于设置的 sim_dt
+
+---
 
 ## 使用方法
 
