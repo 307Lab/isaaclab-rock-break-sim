@@ -87,7 +87,7 @@ def load_meshes_to_isaaclab(
     print(f"[INFO]: Loaded {len(meshes)} meshes into Isaac Lab.")
     return root_prim,rock_objects
 
-def create_attachment_between_prims(rockname,actor0_id,actor1_id,actor0_path: str = "/World/BoxA",actor1_path: str = "/World/BoxB",):
+def create_attachment_between_prims(rockname,actor0_id,actor1_id,actor0_path: str = "/World/BoxA",actor1_path: str = "/World/BoxB"):
     # Get current USD stage
     stage: Usd.Stage = omni.usd.get_context().get_stage()
 
@@ -111,6 +111,12 @@ def break_attachment_between_prims(rockname,actor0_id,actor1_id):
     attachment_prim = stage.GetPrimAtPath(attachment_path)
     if attachment_prim:
         sim_utils.delete_prim(attachment_path)
+        prim_i = f"/World/Objects/{rockname}/rock_{actor0_id}"
+        prim_j = f"/World/Objects/{rockname}/rock_{actor1_id}"
+        for path in [prim_i, prim_j]:
+            prim = stage.GetPrimAtPath(path)
+            collision_api = UsdPhysics.CollisionAPI.Apply(prim)
+            collision_api.GetCollisionEnabledAttr().Set(True)
 
 
 
