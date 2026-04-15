@@ -143,6 +143,52 @@ update_rocks_state(
 
 ---
 
+
+### 离线生成石头
+
+生成石块到指定文件
+
+prebreakv2.generate_prebroken_rock_and_save(num_points=40,
+    scale=0.5,
+    num_cells=25,
+    file_name="rock_data.pkl",
+    seed=None
+) 
+
+#### 参数列表
+
+- num_points : int          生成的多边体石头的端点数量，默认为 40
+- scale : float             生成比例，默认比例下平均半径为3 m，默认为 1
+- num_cells : int           预破碎碎块的数量基数，通常生成的碎块数量为3-6倍基数，默认为 25
+- file_name : str           要保存的石块的文件名
+- seed : int                种子，None为随机生成
+
+---
+
+### 加载离线生成的石头
+
+用法与 usdTools.generate_prebroken_rock 基本一致
+
+usdTools.load_rock_from_file(
+    file_name=None,
+    rock_name="base_rock_0",
+    root_path="/World/Objects/base_rock_0",
+    base_translation=(0, 0, 0)
+)
+
+#### 参数列表
+
+- file_name : str           石头文件的位置
+- rock_name : str           石头名称，需要与 root_path 中 Objects 后的名字一致，默认为 "base_rock_0"
+- root_path : str           石头在 isaaclab 中生成的 prim 位置，默认为 "/World/Objects/base_rock_0"
+- base_translation : tuple  石头生成位置，默认(0, 0, 0)
+
+#### 返回值
+
+- usdTools.Rock 单个石头对象
+
+---
+
 ## 使用方法
 
 完整方法参见 start_sim.py
